@@ -132,6 +132,24 @@ nav.tabs button.on .ti{transform:scale(1.1)}
 .neg{color:var(--bad)}
 .how{font-size:14px;color:var(--muted);display:flex;flex-direction:column;gap:6px}
 .how b{color:var(--ink)}
+.kpi{display:flex;flex-direction:column;gap:6px}
+.kpi .row2{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.kpi .pctb{font-family:var(--display);font-size:24px;font-weight:700;font-variant-numeric:tabular-nums}
+.bar{height:10px;border-radius:99px;background:var(--surface2);overflow:hidden;position:relative}
+.bar i{display:block;height:100%;border-radius:99px;background:var(--ok)}
+.bar.under i{background:var(--warn)}
+.bar.bad i{background:var(--bad)}
+.good{color:var(--ok)} .warnc{color:var(--warn)}
+.tblwrap{overflow-x:auto;margin:0 -2px}
+table.pf{border-collapse:collapse;width:100%;font-size:13.5px;font-variant-numeric:tabular-nums;min-width:520px}
+table.pf th{font-size:12px;color:var(--muted);font-weight:600;text-align:right;padding:6px 6px;border-bottom:1px solid var(--line);white-space:nowrap}
+table.pf td{text-align:right;padding:7px 6px;border-bottom:1px solid var(--line);white-space:nowrap}
+table.pf th:first-child,table.pf td:first-child{text-align:left}
+table.pf tr.tot td{font-weight:700;border-top:2px solid var(--line)}
+.chart{width:100%;height:auto;display:block}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin-top:4px}
+.legend span::before{content:"";display:inline-block;width:14px;height:3px;border-radius:2px;margin-right:6px;vertical-align:middle;background:var(--c)}
+.legend span.dash::before{background:repeating-linear-gradient(90deg,var(--c) 0 4px,transparent 4px 7px)}
 .opt{border:2px solid var(--line);background:var(--surface);border-radius:14px;padding:12px 10px;text-align:left;display:flex;flex-direction:column}
 .opt b{font-size:16px}
 .opt small{color:var(--muted);font-size:13px}
@@ -155,7 +173,7 @@ nav.tabs button.on .ti{transform:scale(1.1)}
 .mini.danger{background:var(--exp-bg);color:var(--bad)}
 .cl-edit{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .cl-edit .full{grid-column:1/-1}
-.cl-edit label{font-size:13px;color:var(--muted);display:flex;flex-direction:column;gap:4px}
+.cl-edit label{font-size:13px;color:var(--muted);display:flex;flex-direction:column;gap:4px;justify-content:flex-end}
 .cl-edit input{border:2px solid var(--line);border-radius:10px;background:var(--surface);padding:10px;font-size:16px;width:100%;min-width:0}
 .debtrow{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--line)}
 .debtrow:last-child{border-bottom:0}
@@ -199,11 +217,11 @@ const INV_CATS=[
 ];
 const PAY={cash:{ru:'Наличные',tj:'Нақд'},transfer:{ru:'Перевод',tj:'Интиқол'},debt:{ru:'В долг',tj:'Қарз'},part:{ru:'Часть сейчас',tj:'Қисман'},own:{ru:'Своими деньгами',tj:'Аз пули худам'},kassa:{ru:'Отдал в кассу проекта',tj:'Ба кассаи лоиҳа'}};
 const TABS=[
-  {v:'add',ic:'✍️',ru:'Записать'},{v:'sum',ic:'📊',ru:'Итоги'},{v:'bal',ic:'⚖️',ru:'Баланс'},{v:'debt',ic:'📒',ru:'Долги'},
-  {v:'log',ic:'📜',ru:'Журнал'},{v:'inv',ic:'🏗️',ru:'Вложения'},{v:'set',ic:'⚙️',ru:'Списки'}
+  {v:'add',ic:'✍️',ru:'Записать'},{v:'sum',ic:'📊',ru:'Итоги'},{v:'plan',ic:'🎯',ru:'План'},{v:'bal',ic:'⚖️',ru:'Баланс'},{v:'debt',ic:'📒',ru:'Долги'},
+  {v:'log',ic:'📜',ru:'Журнал'},{v:'set',ic:'⚙️',ru:'Списки'}
 ];
 const S={db:null,user:null,me:null,entries:[],clients:[],prices:{lep:0,samsa:0},tab:'add',loading:false,updated:0,errInfo:null,
-  per:'day',anchor:null,logType:'all',confirm:null,ready:false,err:null,clientsReady:false,editClient:null,newClient:false,cooks:[],editCook:null,newCook:false,cats:[],settings:{p1:'Андрей',p2:'Баха',share1:50,share2:50,recover:true,reserve:0},invTot:{all:0,kassa:0}};
+  per:'day',anchor:null,logType:'all',confirm:null,ready:false,err:null,clientsReady:false,editClient:null,newClient:false,cooks:[],editCook:null,newCook:false,cats:[],settings:{p1:'Андрей',p2:'Баха',share1:50,share2:50,recover:true,reserve:0},invTot:{all:0,kassa:0},plans:[],pmonth:null};
 const catOf=id=>S.cats.find(c=>c.id===id);
 const catName=id=>catOf(id)?.name||id||'Расход';
 const pName=k=>(k==='p1'?S.settings.p1:S.settings.p2)||(k==='p1'?'Участник 1':'Участник 2');
@@ -256,7 +274,7 @@ const ERR={
 };
 function render(){
   updateStatus();
-  $('#tabs').innerHTML=TABS.filter(t=>t.v!=='inv'||isOwner()).map(t=>`<button data-tab="${t.v}" class="${S.tab===t.v?'on':''}"><span class="ti">${t.ic}</span>${t.ru}</button>`).join('');
+  $('#tabs').innerHTML=TABS.map(t=>`<button data-tab="${t.v}" class="${S.tab===t.v?'on':''}"><span class="ti">${t.ic}</span>${t.ru}</button>`).join('');
   const m=$('#main');
   if(S.err==='NO_ACCESS'){m.innerHTML=`<div class="card" style="display:flex;flex-direction:column;gap:10px"><div class="big">🔒 Нет доступа</div>
     <div>Дастрасӣ нест. Андрей уже получил сообщение о вас. Когда он даст доступ, нажмите кнопку ниже.</div>
@@ -264,7 +282,7 @@ function render(){
     <button class="go" data-refresh="1">Проверить снова<small>Боз санҷед</small></button></div>`;return;}
   if(S.err&&!S.ready){m.innerHTML=`<div class="err">${esc(ERR[S.err]||('Ошибка сервера: '+((S.errInfo&&S.errInfo.message)||S.err)))}</div>
     ${S.err==='notg'||S.err==='nourl'?'':'<p><button class="go" data-refresh="1">Повторить</button></p>'}`;return;}
-  m.innerHTML=({add:vAdd,sum:vSum,bal:vBal,debt:vDebt,log:vLog,inv:vInv,set:vSet}[S.tab])();
+  m.innerHTML=({add:vAdd,sum:vSum,plan:vPlan,bal:vBal,debt:vDebt,log:vLog,inv:vInv,set:vSet}[S.tab])();
 }
 
 function entryLine(e){
@@ -430,8 +448,113 @@ function vBal(){
     <div>3. «Можно выплатить сейчас» — сколько реально есть в кассе и на счёте${b.reserve?`, минус ${rub(b.reserve)} на закупки`:''}.</div>
     <div>4. Отдали деньги — нажмите «Записать выплату». Остаток и баланс уменьшатся сразу.</div>
   </div>
+  ${isOwner()?`<button class="tile wide c-inv" data-tab="inv" style="width:100%;margin-top:14px"><span class="ic">🏗️</span><span style="display:flex;flex-direction:column"><b>Вложения в развитие</b><small>Записать и посмотреть, видно только вам</small></span></button>`:''}
   <h2>Выплаты<small>Пардохтҳо</small></h2>
   ${pays.length?`<div class="feed">${pays.map(entryLine).join('')}</div>`:'<div class="empty">Выплат пока не было.</div>'}`;
+}
+/* ---------- план / факт ---------- */
+function planFor(d){let p=null;for(const x of S.plans){if(x.from<=d)p=x;else break;}return p;}
+function daysIn(ym){const [y,m]=ym.split('-').map(Number);return new Date(y,m,0).getDate();}
+function pct(f,p){return p>0?Math.round(f/p*100):null;}
+function devTxt(f,p){if(!(p>0))return '—';const d=Math.round((f-p)/p*100);return (d>0?'+':'')+d+'%';}
+function devCls(f,p){if(!(p>0))return '';const r=f/p;return r>=1?'good':r>=0.9?'warnc':'neg';}
+function shiftPay(pl,l,sm){if(!pl)return 0;if(l>0&&sm>0)return Math.max(pl.payLep,pl.paySamsa);return l>0?pl.payLep:pl.paySamsa;}
+function shiftEarn(pl,l,sm){if(!pl)return 0;return l*pl.payLep/(pl.normLep||700)+sm*pl.paySamsa/(pl.normSamsa||300);}
+function calcPlan(ym){
+  const nd=daysIn(ym),td=today();const days=[];
+  for(let i=1;i<=nd;i++){const d=ym+'-'+String(i).padStart(2,'0');const pl=planFor(d);
+    days.push({d,i,pl,pL:pl?pl.lepDay:0,pS:pl?pl.samsaDay:0,bL:0,bS:0,sL:0,sS:0,past:d<td});}
+  const by=Object.fromEntries(days.map(x=>[x.d,x]));
+  const sh={};
+  for(const e of S.entries){if(e.cancelled||!by[e.date])continue;const x=by[e.date];
+    if(e.type==='bake'){x.bL+=n(e.lep);x.bS+=n(e.samsa);const k=e.date+'|'+(e.cook||e.cookName||'?');
+      const r=sh[k]||(sh[k]={d:e.date,cook:e.cook,name:e.cookName||'Без имени',l:0,s:0});r.l+=n(e.lep);r.s+=n(e.samsa);}
+    if(e.type==='whole'||e.type==='retail'){x.sL+=n(e.lep);x.sS+=n(e.samsa);}}
+  if(by[td]&&(by[td].bL||by[td].bS))by[td].past=true;
+  const cooks={};let paid=0,earn=0,over=0,above=0,lp=0,lc=0,spp=0,sc=0;
+  for(const r of Object.values(sh)){if(!r.l&&!r.s)continue;const pl=by[r.d].pl;const pay=shiftPay(pl,r.l,r.s),ea=shiftEarn(pl,r.l,r.s);
+    const ck=S.cooks.find(c=>c.id===r.cook);const name=ck?ck.name:r.name;
+    const c=cooks[r.cook||name]||(cooks[r.cook||name]={name,shifts:0,l:0,s:0,pay:0,earn:0,over:0,above:0});
+    c.shifts++;c.l+=r.l;c.s+=r.s;c.pay+=pay;c.earn+=ea;const df=pay-ea;if(df>0){c.over+=df;over+=df;}else{c.above+=-df;above+=-df;}
+    paid+=pay;earn+=ea;if(r.l&&!r.s){lp+=pay;lc+=r.l;}if(r.s&&!r.l){spp+=pay;sc+=r.s;}}
+  const t={pL:0,pS:0,bL:0,bS:0,sL:0,sS:0,mL:0,mS:0};let cpL=0,cpS=0,cbL=0,cbS=0,csL=0,csS=0;
+  for(const x of days){t.mL+=x.pL;t.mS+=x.pS;cpL+=x.pL;cpS+=x.pS;x.cpL=cpL;x.cpS=cpS;
+    if(x.past){t.pL+=x.pL;t.pS+=x.pS;t.bL+=x.bL;t.bS+=x.bS;t.sL+=x.sL;t.sS+=x.sS;cbL+=x.bL;cbS+=x.bS;csL+=x.sL;csS+=x.sS;x.cbL=cbL;x.cbS=cbS;x.csL=csL;x.csS=csS;}}
+  const nPast=days.filter(x=>x.past).length;
+  const todayIn=!!(by[td]&&by[td].past);
+  return {todayIn,days,t,cooks:Object.values(cooks).sort((a,b)=>b.over-a.over),paid,earn,over,above,perL:lc?lp/lc:0,perS:sc?spp/sc:0,nd,nPast};
+}
+function chartSVG(days,kp,kb,ks,col,label){
+  const W=360,H=190,L=44,R=10,T=12,B=26,nd=days.length;
+  const last=days.filter(x=>x.past);const maxV=Math.max(1,days[nd-1][kp],...last.map(x=>Math.max(x[kb],x[ks])));
+  const step=Math.pow(10,Math.floor(Math.log10(maxV)));const nice=[1,2,2.5,5,10].map(m=>m*step).find(v=>maxV/v<=5)||step*10;const top=Math.ceil(maxV/nice)*nice;
+  const X=i=>L+(i-1)*(W-L-R)/Math.max(1,nd-1),Y=v=>T+(H-T-B)*(1-v/top);
+  const path=(arr,k)=>arr.map((x,j)=>(j?'L':'M')+X(x.i).toFixed(1)+' '+Y(x[k]).toFixed(1)).join(' ');
+  let g='';for(let v=0;v<=top+1e-9;v+=nice){g+=`<line x1="${L}" x2="${W-R}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)" stroke-width="1"/><text x="${L-6}" y="${Y(v)+4}" text-anchor="end" font-size="10" fill="var(--muted)">${v>=1000?(v/1000).toLocaleString('ru-RU')+'k':v}</text>`;}
+  const xt=[1,10,20,nd].map(i=>`<text x="${X(i)}" y="${H-8}" text-anchor="middle" font-size="10" fill="var(--muted)">${i}</text>`).join('');
+  const lp=last.length?last[last.length-1]:null;
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(label)}">${g}${xt}
+    <path d="${path(days,kp)}" fill="none" stroke="var(--muted)" stroke-width="2" stroke-dasharray="5 4"/>
+    ${last.length?`<path d="${path(last,ks)}" fill="none" stroke="var(--whole)" stroke-width="2.2"/>
+    <path d="${path(last,kb)}" fill="none" stroke="${col}" stroke-width="2.8"/>
+    <circle cx="${X(lp.i)}" cy="${Y(lp[kb])}" r="4" fill="${col}"/>`:''}</svg>
+    <div class="legend"><span class="dash" style="--c:var(--muted)">План</span><span style="--c:${col}">Испекли</span><span style="--c:var(--whole)">Продали</span></div>`;
+}
+function kpi(title,f,p,unit,sub,pl){const r=pct(f,p);const w=Math.min(100,r||0);
+  return `<div class="card kpi"><div class="row2"><b>${title}</b><span class="pctb ${devCls(f,p)}">${devTxt(f,p)}</span></div>
+   <div class="bar ${r!=null&&r<90?'bad':r!=null&&r<100?'under':''}"><i style="width:${w}%"></i></div>
+   <div class="row2 hint"><span>факт ${f.toLocaleString('ru-RU')} ${unit}</span><span>${pl||'план'} ${p.toLocaleString('ru-RU')} ${unit}</span></div>${sub||''}</div>`;}
+function vPlan(){
+  if(!S.ready)return '<div class="empty">Загружаю…</div>';
+  const ym=S.pmonth||today().slice(0,7);
+  const P=calcPlan(ym),t=P.t;
+  const mName=new Date(ym+'-15T12:00:00').toLocaleDateString('ru-RU',{month:'long',year:'numeric'});
+  const head=`<div class="datebar"><button class="navbtn" data-pm="-1" aria-label="Назад">‹</button><div class="lbl">${esc(mName)}</div><button class="navbtn" data-pm="1" aria-label="Вперёд">›</button></div>`;
+  if(!S.plans.length)return head+`<div class="empty">План ещё не задан. ${isOwner()?'Задайте его во вкладке «Списки» → «План производства».':'Его задаёт Андрей.'}</div>`;
+  if(!P.nPast)return head+'<div class="empty">Этот месяц ещё не начался.</div>';
+  const fc=(b)=>P.nPast?Math.round(b/P.nPast*P.nd):0;
+  const unsL=t.bL-t.sL,unsS=t.bS-t.sS;
+  const rows=P.days.filter(x=>x.past).reverse().map(x=>`<tr><td>${x.i} ${new Date(x.d+'T12:00:00').toLocaleDateString('ru-RU',{weekday:'short'})}</td>
+    <td>${x.pL}</td><td>${x.bL}</td><td class="${devCls(x.bL,x.pL)}">${devTxt(x.bL,x.pL)}</td><td>${x.sL}</td>
+    <td>${x.pS}</td><td>${x.bS}</td><td class="${devCls(x.bS,x.pS)}">${devTxt(x.bS,x.pS)}</td><td>${x.sS}</td></tr>`).join('');
+  const cp=planFor(today())||S.plans[S.plans.length-1];
+  return head+`
+  <p class="hint" style="margin-top:0">Накопительно с 1-го числа ${P.nPast===P.nd?'до конца месяца':P.todayIn?'по сегодня (сегодня ещё идёт)':'по вчера (за сегодня выпечки ещё нет)'} · ${P.nPast} дн. из ${P.nd}.</p>
+  <h2>Производство · пекари<small>Истеҳсол</small></h2>
+  <div class="grid2">
+    ${kpi('🫓 Лепёшки',t.bL,t.pL,'шт',`<div class="hint">Прогноз на месяц: ${fc(t.bL).toLocaleString('ru-RU')} из ${t.mL.toLocaleString('ru-RU')}</div>`)}
+    ${kpi('🥟 Самса',t.bS,t.pS,'шт',`<div class="hint">Прогноз на месяц: ${fc(t.bS).toLocaleString('ru-RU')} из ${t.mS.toLocaleString('ru-RU')}</div>`)}
+  </div>
+  <h2>Сбыт · Баха<small>Фурӯш</small></h2>
+  <div class="grid2">
+    ${kpi('🚚 Продано лепёшек',t.sL,t.bL,'шт',`<div class="hint">Не продано: <b class="${unsL>0?'neg':''}">${unsL.toLocaleString('ru-RU')} шт</b></div>`,'испекли')}
+    ${kpi('🚚 Продано самсы',t.sS,t.bS,'шт',`<div class="hint">Не продано: <b class="${unsS>0?'neg':''}">${unsS.toLocaleString('ru-RU')} шт</b></div>`,'испекли')}
+  </div>
+  <p class="hint">Продано = опт + розница. Розница считается, если в «Касса за смену» указаны штуки.</p>
+  <h2>Оплата пекарей<small>Музди нонвойҳо</small></h2>
+  <div class="grid2">
+    <div class="card"><div class="hint">Переплата: заплатили за смены, где норма не сделана</div><div class="big ${P.over>0?'neg':''}">${rub(P.over)}</div>
+      <div class="hint">По договорённости: ${rub(cp.payLep)} за ${cp.normLep} лепёшек, ${rub(cp.paySamsa)} за ${cp.normSamsa} самсы за смену.</div></div>
+    <div class="card"><div class="kv"><span>Платим за смены</span><b>${rub(P.paid)}</b></div>
+      <div class="kv"><span>Заработано по норме</span><b>${rub(P.earn)}</b></div>
+      <div class="kv"><span>Сделано сверх нормы</span><b class="good">${rub(P.above)}</b></div>
+      <div class="kv"><span>Труд на 1 лепёшку</span><b>${P.perL?P.perL.toFixed(2).replace('.',',')+' ₽':'—'} <small class="hint">норма ${(cp.payLep/cp.normLep).toFixed(2).replace('.',',')}</small></b></div>
+      <div class="kv"><span>Труд на 1 самсу</span><b>${P.perS?P.perS.toFixed(2).replace('.',',')+' ₽':'—'} <small class="hint">норма ${(cp.paySamsa/cp.normSamsa).toFixed(2).replace('.',',')}</small></b></div></div>
+  </div>
+  ${P.cooks.length?`<div class="card" style="margin-top:10px"><div class="tblwrap"><table class="pf" style="min-width:0">
+    <tr><th>Пекарь</th><th>Смен</th><th>Сделал</th><th>Норма</th><th>Переплата</th></tr>
+    ${P.cooks.map(c=>`<tr><td style="white-space:normal">${esc(c.name)}</td><td>${c.shifts}</td><td>${[c.l?c.l+' нон':'',c.s?c.s+' самса':''].filter(Boolean).join('<br>')}</td><td class="${devCls(c.earn,c.pay)}">${pct(c.earn,c.pay)??'—'}%</td><td class="${c.over>0?'neg':''}">${rub(c.over)}</td></tr>`).join('')}
+  </table></div><div class="hint">Норма 100% = сделал за смену ${cp.normLep} лепёшек или ${cp.normSamsa} самсы. Смена = пекарь за один день.</div></div>`:''}
+  <h2>График за месяц<small>накопительно</small></h2>
+  <div class="card"><b>Лепёшки</b>${chartSVG(P.days,'cpL','cbL','csL','var(--bake)','Лепёшки: план и факт')}</div>
+  <div class="card" style="margin-top:10px"><b>Самса</b>${chartSVG(P.days,'cpS','cbS','csS','var(--exp)','Самса: план и факт')}</div>
+  <h2>По дням<small>Рӯз ба рӯз</small></h2>
+  <div class="card"><div class="tblwrap"><table class="pf">
+    <tr><th></th><th colspan="4" style="text-align:center">Лепёшки</th><th colspan="4" style="text-align:center">Самса</th></tr>
+    <tr><th>День</th><th>План</th><th>Испекли</th><th>%</th><th>Продали</th><th>План</th><th>Испекли</th><th>%</th><th>Продали</th></tr>
+    ${rows}
+    <tr class="tot"><td>Итого</td><td>${t.pL}</td><td>${t.bL}</td><td class="${devCls(t.bL,t.pL)}">${devTxt(t.bL,t.pL)}</td><td>${t.sL}</td><td>${t.pS}</td><td>${t.bS}</td><td class="${devCls(t.bS,t.pS)}">${devTxt(t.bS,t.pS)}</td><td>${t.sS}</td></tr>
+  </table></div></div>`;
 }
 function vInv(){
   const E=S.entries.filter(e=>e.type==='inv'&&!e.cancelled);
@@ -439,7 +562,7 @@ function vInv(){
   const by={};for(const e of E)by[e.cat]=(by[e.cat]||0)+n(e.sum);
   const cats=Object.entries(by).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<div class="kv"><span>${esc(INV_CATS.find(c=>c.v===k)?.ru||k)}</span><b>${rub(v)}</b></div>`).join('');
   const all=S.entries.filter(e=>e.type==='inv');
-  return `<button class="tile wide c-inv" data-open="inv" style="width:100%"><span class="ic">🏗️</span><span style="display:flex;flex-direction:column"><b>Внести инвестицию</b><small>Оборудование, ремонт, техника, аванс</small></span></button>
+  return `<button class="mini" data-tab="bal" style="margin-bottom:12px">← Баланс</button><button class="tile wide c-inv" data-open="inv" style="width:100%"><span class="ic">🏗️</span><span style="display:flex;flex-direction:column"><b>Внести инвестицию</b><small>Оборудование, ремонт, техника, аванс</small></span></button>
   <div class="card" style="margin-top:12px"><div class="hint">Вложено в развитие всего</div><div class="big" style="color:var(--inv)">${rub(total)}</div>
    <div class="hint">Это не текущие расходы: в «Итогах» и «наличке на руках» не учитываются.</div></div>
   ${cats?`<h2>По статьям</h2><div class="card">${cats}</div>`:''}
@@ -488,6 +611,20 @@ function vSet(){
     <label class="full" style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" id="st-rec" ${st.recover?'checked':''} style="width:auto"> Сначала вернуть вложения инвестору, потом делить прибыль</label>
     <div class="full"><button class="mini" style="background:var(--ok);color:#fff" data-savesettings="1">Сохранить</button></div></div></div>`
   :`<h2>Цены и доли</h2><div class="card"><span class="hint">Опт: нон ${S.prices.lep||'—'} ₽ · самса ${S.prices.samsa||'—'} ₽. Прибыль: ${esc(st.p1)} ${st.share1}% · ${esc(st.p2)} ${st.share2}%. Меняет владелец.</span></div>`}
+  <h2>План производства<small>Нақша</small></h2>
+  <div class="card">${(()=>{const cur=planFor(today())||S.plans[S.plans.length-1]||{lepDay:700,samsaDay:300,normLep:700,normSamsa:300,payLep:5000,paySamsa:5000};
+    const hist=[...S.plans].reverse().map(p=>`<div class="kv"><span style="white-space:nowrap">с ${esc(p.from.split('-').reverse().join('.'))}</span><b>нон ${p.lepDay} · самса ${p.samsaDay} в день</b></div>`).join('');
+    return (isOwner()?`<div class="cl-edit">
+      <label class="full">Действует с даты<input type="date" id="pl-from" value="${today()}"></label>
+      <label>Лепёшек в день<input id="pl-l" inputmode="numeric" value="${cur.lepDay}"></label>
+      <label>Самсы в день<input id="pl-s" inputmode="numeric" value="${cur.samsaDay}"></label>
+      <label>Норма нон / смена<input id="pl-nl" inputmode="numeric" value="${cur.normLep}"></label>
+      <label>Норма самсы / смена<input id="pl-ns" inputmode="numeric" value="${cur.normSamsa}"></label>
+      <label>Смена нон, ₽<input id="pl-pl" inputmode="numeric" value="${cur.payLep}"></label>
+      <label>Смена самса, ₽<input id="pl-ps" inputmode="numeric" value="${cur.paySamsa}"></label>
+      <div class="full"><button class="mini" style="background:var(--ok);color:#fff" data-saveplan="1">Сохранить план</button>
+      <span class="hint" style="margin-left:6px">Новый план действует с выбранной даты. Прошлые дни считаются по старому плану.</span></div></div>`:'')
+      +(hist?`<div style="margin-top:10px"><div class="hint">История планов</div>${hist}</div>`:'<div class="hint">План ещё не задан.</div>');})()}</div>
   <h2>Пекари<small>Нонвойҳо</small></h2>
   <div class="card">
     ${[...S.cooks].sort((a,b)=>String(a.name).localeCompare(String(b.name),'ru')).map(c=>S.editCook===c.id?cookForm(c):
@@ -674,6 +811,11 @@ document.addEventListener('click',async ev=>{
   const b=ev.target.closest('button');if(!b)return;
   const d=b.dataset;
   if(d.refresh){load();return;}
+  if(d.pm){const x=new Date((S.pmonth||today().slice(0,7))+'-15T12:00:00');x.setMonth(x.getMonth()+(+d.pm));S.pmonth=iso(x).slice(0,7);render();return;}
+  if(d.saveplan){b.disabled=true;b.textContent='Сохраняю…';
+    try{const j=await api('savePlan',{from:$('#pl-from').value,lepDay:n($('#pl-l').value),samsaDay:n($('#pl-s').value),normLep:n($('#pl-nl').value),
+      normSamsa:n($('#pl-ns').value),payLep:n($('#pl-pl').value),paySamsa:n($('#pl-ps').value)});S.plans=j.plans;render();}
+    catch(e){b.disabled=false;b.textContent='Не сохранилось — ещё раз';}return;}
   if(d.tab){S.tab=d.tab;S.confirm=null;render();scrollTo(0,0);return;}
   if(d.open){if(!S.ready)return;openForm(d.open);return;}
   if(d.payin){openForm('payin',{client:d.payin});return;}
@@ -765,7 +907,7 @@ async function load(){
   try{
     const j=await api('load');
     S.me=j.me;S.entries=(j.entries||[]).sort((a,b)=>b.ts-a.ts);S.clients=j.clients||[];S.cooks=j.cooks||[];
-    S.prices=j.prices||{lep:0,samsa:0};S.cats=j.cats||[];if(j.settings)S.settings=j.settings;S.invTot=j.invTotals||{all:0,kassa:0};S.ready=true;S.err=null;S.errInfo=null;S.updated=Date.now();
+    S.prices=j.prices||{lep:0,samsa:0};S.cats=j.cats||[];if(j.settings)S.settings=j.settings;S.invTot=j.invTotals||{all:0,kassa:0};S.plans=j.plans||[];S.ready=true;S.err=null;S.errInfo=null;S.updated=Date.now();
     if(S.tab==='inv'&&!isOwner())S.tab='add';
   }catch(e){S.err=e.code||'net';S.errInfo=e;if(e.code==='NO_ACCESS')S.ready=false;}
   S.loading=false;
